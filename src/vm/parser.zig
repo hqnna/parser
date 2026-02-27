@@ -5,10 +5,11 @@ const Tokenizer = @import("tokenizer.zig");
 pub const Value = union(enum(u8)) {
     pub const Operator = enum(u8) { add, sub, mul, div };
     pub const Scope = enum(u8) { open, close };
+    pub const Number = union(enum(u8)) { int: isize, float: f64 };
 
     operator: Operator,
     scope: Scope,
-    number: usize,
+    number: Number,
 };
 
 cursor: usize,
@@ -56,9 +57,16 @@ pub fn parse(self: *Parser) Error![]const Value {
 fn parseNumber(self: *Parser) Error!Value {
     const token = self.tokens[self.cursor];
     if (token.kind != .number) return Error.ParseError;
+    const buffer = self.buffer[token.start.? .. token.end.? + 1];
 
-    const value = try std.fmt.parseInt(usize, self.buffer[token.start.? .. token.end.? + 1], 10);
-    return .{ .number = value };
+    var result: Value.Number = undefined;
+    if (std.mem.indexOf(u8, buffer, ".") == null) {
+        result = .{ .int = try std.fmt.parseInt(isize, buffer, 10) };
+    } else {
+        result = .{ .float = try std.fmt.parseFloat(f64, buffer) };
+    }
+
+    return .{ .number = result };
 }
 
 fn parseOperator(self: *Parser) Error!Value {

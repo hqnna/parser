@@ -3,7 +3,8 @@ const std = @import("std");
 const Parser = @import("parser.zig");
 
 pub const Node = union(enum(u8)) {
-    value: usize,
+    value: Parser.Value.Number,
+
     operation: struct {
         op: Parser.Value.Operator,
         lhs: *Node,

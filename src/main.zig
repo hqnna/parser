@@ -2,24 +2,14 @@ const std = @import("std");
 const Tokenizer = @import("vm/tokenizer.zig");
 const Parser = @import("vm/parser.zig");
 const ASTGen = @import("vm/astgen.zig");
+const VM = @import("vm/vm.zig");
 
-fn dump(node: *const ASTGen.Node, indent: usize) void {
-    for (0..indent) |_| std.debug.print("  ", .{});
+pub fn main(init: std.process.Init) !void {
+    var argv = init.minimal.args.iterate();
+    _ = argv.skip();
 
-    switch (node.*) {
-        .value => |v| std.debug.print("value({d})\n", .{v}),
-        .operation => |op| {
-            std.debug.print("op({s})\n", .{@tagName(op.op)});
-            dump(op.lhs, indent + 1);
-            dump(op.rhs, indent + 1);
-        },
-    }
-}
-
-pub fn main() !void {
-    const data = "13 + (12 + (64 * 2))";
+    var tokenizer = Tokenizer.init(argv.next().?);
     const allocator = std.heap.smp_allocator;
-    var tokenizer = Tokenizer.init(data);
     var parser = try Parser.init(allocator, &tokenizer);
     defer parser.deinit();
 
@@ -30,5 +20,11 @@ pub fn main() !void {
     const ast = try astgen.expr();
     defer ast.deinit(allocator);
 
-    dump(ast, 0);
+    const vm = VM.init(ast);
+    const result = try vm.exec();
+
+    switch (result.number) {
+        .float => |v| std.log.debug("{d}", .{v}),
+        .int => |v| std.log.debug("{d}", .{v}),
+    }
 }

@@ -33,7 +33,9 @@ pub fn next(self: *Tokenizer) ?Token {
 fn getNumber(self: *Tokenizer) ?Token {
     var token = Token{ .kind = .number, .start = null, .end = null };
     while (self.cursor < self.buffer.len) : (self.cursor += 1) {
-        if (self.buffer[self.cursor] < '0' or self.buffer[self.cursor] > '9') break;
+        if (self.buffer[self.cursor] != '.' and
+            (self.buffer[self.cursor] < '0' or
+                self.buffer[self.cursor] > '9')) break;
         if (token.start == null) token.start = self.cursor;
         token.end = self.cursor;
     }
